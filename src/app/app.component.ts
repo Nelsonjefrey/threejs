@@ -1,7 +1,8 @@
 import { Component, ElementRef, HostListener, OnInit } from '@angular/core';
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
-
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/all';
 
 @Component({
   selector: 'app-root',
@@ -14,6 +15,8 @@ export class AppComponent implements OnInit  {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private model: THREE.Group;
+  private position: any;
+  private target: any;
   private scrollY: number = 0;
   private horizontalPercentage: number = -25;
 
@@ -31,14 +34,18 @@ export class AppComponent implements OnInit  {
     this.scene.background = new THREE.Color(0xffffff);
 
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-    this.renderer = new THREE.WebGLRenderer();
+    this.camera.position.set(1,1,1);
+    // this.position = this.camera.position;    
+    this.renderer = new THREE.WebGLRenderer( { alpha: true });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.el.nativeElement.appendChild(this.renderer.domElement);
 
-    this.renderer.domElement.style.position = "sticky";
+    this.renderer.domElement.style.position = "fixed";
     this.renderer.domElement.style.top = "0";
-    this.renderer.domElement.style.transition = "all 0.5s linear";
-    this.renderer.domElement.style.transform = "translate(-25%)";
+    // this.renderer.domElement.style.left = '0';
+    this.renderer.setSize(window.innerWidth, window.innerHeight);
+
+    this.renderer.setClearColor( 0xff0000, 0 );
 
     const ambientLight = new THREE.AmbientLight(0x404040, 10);
     this.scene.add(ambientLight);
@@ -61,15 +68,22 @@ export class AppComponent implements OnInit  {
     this.scene.add(directionalLight4);
 
     // Posiciona la cámara
-    this.camera.position.z = 5;
+    this.camera.position.z = 4;
+    this.camera.position.y = 0;
+    this.camera.position.x = 0;
+    
   }
 
+  
   private loadModel(): void {
     // Carga el modelo GLB
     const loader = new GLTFLoader();
     loader.load('assets/objeto.glb', (gltf) => {
       this.model = gltf.scene;
       this.scene.add(this.model);
+      this.scene.background = null;
+
+      gltf.scene.rotation.y = Math.PI / 2;
 
     }, undefined, (error) => {
       console.error(error);
@@ -85,22 +99,65 @@ export class AppComponent implements OnInit  {
 
       this.renderer.render(this.scene, this.camera);
     };
-
+    // gsap.registerPlugin(ScrollTrigger);
+    // const tl = gsap.timeline();
+    // tl.to(".contenedor", {
+    //   scrollTrigger: {
+    //     trigger: ".contenedor",
+    //     start: "bottom bottom",
+    //     end: "bottom bottom",
+    //     scrub: true,
+    //     markers: true,               
+    //   },
+    //   x: 1,
+    //   y: -1,
+    //   z: 3,
+    //   duration: 3,
+    //   rotateY: 50
+    // }) 
+    // tl.to(".contenedor", {
+    //   scrollTrigger: {
+    //     trigger: ".second",
+    //     start: "top center",
+    //     end: "center bottom",
+    //     scrub: true,
+    //     markers: true,               
+    //   },
+    //   x: -40,
+    //   y: 1,
+    //   z: -3,
+    //   duration: 3,
+    //   rotateY: 300
+    // })  
     animate();
   }
 
   @HostListener('window:scroll', ['$event'])
   onScroll(event: any): void {
     this.scrollY = window.scrollY;
+    
+    const scrollPercent =
+      ((document.documentElement.scrollTop || document.body.scrollTop) /
+          ((document.documentElement.scrollHeight ||
+              document.body.scrollHeight) -
+              document.documentElement.clientHeight)) *
+      100;
+    const rotationFactor = 0.005; // Ajusta la velocidad de rotación
+    this.scene.rotation.y = (scrollPercent * 3) * (rotationFactor * 3);
 
-    console.log('this.scrollY', this.scrollY)
-    // if (this.scrollY >= 200) {
-    //   // const rotationFactor = 0.005; // Ajusta la velocidad de rotación
-    //   this.scene.rotation.y = this.scroll v  Y * rotationFactor;
-    //   this.renderer.domElement.style.transform = `translate(25%)`;
-    // } else if( this.scrollY < 200 ) {
-    //   this.renderer.domElement.style.transform = `translate(-25%)`;
-    // }
+    if( scrollPercent < 35 ) {
+      console.log('left');
+      
+      this.renderer.domElement.style.left = `${scrollPercent}%`;
+    } else if( scrollPercent >= 35 && scrollPercent <= 75  ) {
+      console.log('right');
+      this.renderer.domElement.style.left = `${35 - (scrollPercent - 35)}%`;
+    }
+    // this.scene.rotation.z = this.scrollY * (rotationFactor / 10);
+    // this.camera.position.z = this.scrollY * rotationFactor
+  
+  
+    console.log(scrollPercent);
   }
 
 }
