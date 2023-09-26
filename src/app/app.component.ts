@@ -15,9 +15,11 @@ export class AppComponent implements OnInit  {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private model: THREE.Group;
+  private currentModel: THREE.Object3D | null = null;
   private position: any;
   private target: any;
   private scrollY: number = 0;
+  private loader = new GLTFLoader();
   private horizontalPercentage: number = -25;
 
   constructor(private el: ElementRef) { }
@@ -77,12 +79,14 @@ export class AppComponent implements OnInit  {
   
   private loadModel(): void {
     // Carga el modelo GLB
-    const loader = new GLTFLoader();
-    loader.load('assets/objeto.glb', (gltf) => {
+    if (this.currentModel) {
+      this.scene.remove(this.currentModel);
+    }
+    this.loader.load('assets/objeto.glb', (gltf) => {
       this.model = gltf.scene;
       this.scene.add(this.model);
       this.scene.background = null;
-
+      this.currentModel = this.model;
       gltf.scene.rotation.y = Math.PI / 2;
 
     }, undefined, (error) => {
@@ -95,40 +99,8 @@ export class AppComponent implements OnInit  {
     const animate = () => {
       requestAnimationFrame(animate);
 
-      
-
       this.renderer.render(this.scene, this.camera);
-    };
-    // gsap.registerPlugin(ScrollTrigger);
-    // const tl = gsap.timeline();
-    // tl.to(".contenedor", {
-    //   scrollTrigger: {
-    //     trigger: ".contenedor",
-    //     start: "bottom bottom",
-    //     end: "bottom bottom",
-    //     scrub: true,
-    //     markers: true,               
-    //   },
-    //   x: 1,
-    //   y: -1,
-    //   z: 3,
-    //   duration: 3,
-    //   rotateY: 50
-    // }) 
-    // tl.to(".contenedor", {
-    //   scrollTrigger: {
-    //     trigger: ".second",
-    //     start: "top center",
-    //     end: "center bottom",
-    //     scrub: true,
-    //     markers: true,               
-    //   },
-    //   x: -40,
-    //   y: 1,
-    //   z: -3,
-    //   duration: 3,
-    //   rotateY: 300
-    // })  
+    };    
     animate();
   }
 
@@ -147,10 +119,21 @@ export class AppComponent implements OnInit  {
 
     if( scrollPercent < 35 ) {
       console.log('left');
-      
       this.renderer.domElement.style.left = `${scrollPercent}%`;
+
+      
     } else if( scrollPercent >= 35 && scrollPercent <= 75  ) {
-      console.log('right');
+      console.log('right');    
+      if (this.currentModel) {
+        this.scene.remove(this.currentModel);
+      }
+
+      this.loader.load('assets/reffer.glb', (gltf) => {
+        // Agrega el nuevo modelo a la escena y actualiza la referencia al modelo actual.
+        const newModel = gltf.scene;
+        this.scene.add(newModel);
+        this.currentModel = newModel;
+      });      
       this.renderer.domElement.style.left = `${35 - (scrollPercent - 35)}%`;
     }
     // this.scene.rotation.z = this.scrollY * (rotationFactor / 10);
