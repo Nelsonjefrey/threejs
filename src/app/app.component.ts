@@ -15,7 +15,7 @@ export class AppComponent implements OnInit  {
   private camera: THREE.PerspectiveCamera;
   private renderer: THREE.WebGLRenderer;
   private model: THREE.Group;
-  private currentModel: THREE.Object3D | null = null;
+  private currentModel: number;
   private position: any;
   private target: any;
   private scrollY: number = 0;
@@ -26,7 +26,7 @@ export class AppComponent implements OnInit  {
 
   ngOnInit(): void {
     this.initScene();
-    this.loadModel();
+    this.loadModel('assets/objeto.glb', 1);
     this.animate();
   }
 
@@ -52,22 +52,11 @@ export class AppComponent implements OnInit  {
     const ambientLight = new THREE.AmbientLight(0x404040, 10);
     this.scene.add(ambientLight);
 
-    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
-    const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1);
-    const directionalLight3 = new THREE.DirectionalLight(0xffffff, 1);
-    const directionalLight4 = new THREE.DirectionalLight(0xffffff, 1);
+    this.ligthScene(3,0,5, 'add');
+    this.ligthScene(-3,0,5, 'add');
+    this.ligthScene(0,-3,5, 'add');
+    this.ligthScene(0,3,5, 'add');
 
-    directionalLight.position.set(3, 0, 5);
-    this.scene.add(directionalLight);
-
-    directionalLight2.position.set(-3, 0, 5);
-    this.scene.add(directionalLight2);
-
-    directionalLight3.position.set(0, -3, 5);
-    this.scene.add(directionalLight3);
-
-    directionalLight4.position.set(0, 3, 5);
-    this.scene.add(directionalLight4);
 
     // Posiciona la cámara
     this.camera.position.z = 4;
@@ -77,21 +66,29 @@ export class AppComponent implements OnInit  {
   }
 
   
-  private loadModel(): void {
-    // Carga el modelo GLB
-    if (this.currentModel) {
-      this.scene.remove(this.currentModel);
-    }
-    this.loader.load('assets/objeto.glb', (gltf) => {
-      this.model = gltf.scene;
-      this.scene.add(this.model);
-      this.scene.background = null;
-      this.currentModel = this.model;
-      gltf.scene.rotation.y = Math.PI / 2;
+  private loadModel(pathModel: string, idModel: number): void {
+    // Carga el modelo GLB       
+    if (idModel != this.currentModel) {
+      this.loader.load(pathModel, (gltf) => {
+        this.scene.remove(this.model);
+        this.model = gltf.scene;
+        this.scene.add(this.model);
+        this.scene.background = null;        
+        gltf.scene.rotation.y = Math.PI / 2;
+        if (idModel == 2) {
+          this.camera.position.z = 6;   
+          this.model.position.x = 3;
+          this.model.position.y = 0;
+          this.model.position.z = 0;                        
 
-    }, undefined, (error) => {
-      console.error(error);
-    });
+        }else{
+          this.camera.position.z = 4;          
+        }
+  
+      }, undefined, (error) => {
+        console.error(error);
+      });      
+    } 
   }
 
   private animate(): void {
@@ -119,28 +116,23 @@ export class AppComponent implements OnInit  {
 
     if( scrollPercent < 35 ) {
       console.log('left');
+      this.loadModel('assets/objeto.glb', 1);
       this.renderer.domElement.style.left = `${scrollPercent}%`;
 
       
     } else if( scrollPercent >= 35 && scrollPercent <= 75  ) {
       console.log('right');    
-      if (this.currentModel) {
-        this.scene.remove(this.currentModel);
-      }
-
-      this.loader.load('assets/reffer.glb', (gltf) => {
-        // Agrega el nuevo modelo a la escena y actualiza la referencia al modelo actual.
-        const newModel = gltf.scene;
-        this.scene.add(newModel);
-        this.currentModel = newModel;
-      });      
+      this.loadModel('assets/reffer.glb', 2);
       this.renderer.domElement.style.left = `${35 - (scrollPercent - 35)}%`;
     }
-    // this.scene.rotation.z = this.scrollY * (rotationFactor / 10);
-    // this.camera.position.z = this.scrollY * rotationFactor
-  
-  
-    console.log(scrollPercent);
+
+  }
+
+  ligthScene(x: number, y: number, z: number, accion: 'add' | 'remove'){
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+    
+    directionalLight.position.set(x, y, z);
+    this.scene[accion](directionalLight);
   }
 
 }
